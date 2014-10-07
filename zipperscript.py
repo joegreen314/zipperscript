@@ -6,7 +6,8 @@ import Tkinter as tk
 from tkFileDialog import askdirectory
 from optparse import OptionParser
 
-#Test
+"""Hawaii version of zipperscript to search for FIS files on another drive
+"""
 
 class ZipperScript():
 
@@ -23,7 +24,7 @@ class ZipperScript():
         if root:
             self.root = root
         elif self.show_gui:
-            self.root = askdirectory(title = "Choose date directory")
+            self.root = askdirectory(title = "Choose root directory")
         else:
             print("Error. No root specified and GUI is suppressed")
 
@@ -37,13 +38,21 @@ class ZipperScript():
             else:
                 #Message boxes disabled.  Use default name
                 self.run_zipperscript("vehicle_name")
+                
+        self.FIS_root = askdirectory(initialdir = "/Volumes/", title = "Choose LCMS computer root directory")
+
+        if vehicle:
+            #vehicle name specificied in argv
+            self.run_zipperscript(vehicle)
+        elif self.show_gui:
+            #vehicle name not speficied, prompt user for name
+            self.get_user_input("Enter Vehicle Name", self.run_zipperscript)
         else:
             self.gui.destroy()
             sys.exit(1)
 
 
     def get_user_input(self, message, next_step):
-
         def OK(user_input):
             window.iconify()
             window.destroy()
@@ -204,7 +213,6 @@ class ZipperScript():
                 self.print_out("\t" + str(cal))
         else:
             self.print_out("No DMI_Cal files found")
-
 
 
     def zip_validations(self):
@@ -447,15 +455,52 @@ class ZipperScript():
 
         #Grab three FIS files from three routes
         self.print_out("\n***** ADDING FIS FILES *****")
+
         FISImages = ["000001.fis", "000006.fis", "000011.fis"]
         if morning_routes:
-            self.zip_route(zip_file, morning_routes[0], FISImages, marker)
+            out = self.FIS_root + morning_routes[0][len(self.root):]
+            self.zip_FISroute(zip_file, out, FISImages, marker)
 
         if midday_routes:
-            self.zip_route(zip_file, midday_routes[0], FISImages, marker)
+            out = self.FIS_root + midday_routes[0][len(self.root):]
+            self.zip_FISroute(zip_file, out, FISImages, marker)
 
         if evening_routes:
-            self.zip_route(zip_file, evening_routes[0], FISImages, marker)
+            out = self.FIS_root + evening_routes[0][len(self.root):]
+            self.zip_FISroute(zip_file, out, FISImages, marker)
+
+    def zip_FISroute(self, zip_file, route_path, file_types, marker):
+        """Searches for and zips all files in route directory with path ending
+        in 'file_types'.
+
+        Parameters
+        ----------
+        routePath : str
+            Absolute file path of route directory to zip
+        file_types : list of str
+            Paths ending in this string will be added to the zip file.  Does 
+            not need to be extensions.  Name is misleading.
+        marker : str
+            Marker which will be added to end root directory's name."""
+
+        if len(file_types)!=0:
+            self.print_out("Searching " + str(route_path) + \
+                    " for any files ending in " + str(file_types))
+            files_written = 0
+
+            for dirpath, dirs, files in os.walk(route_path, topdown=True):
+                for f in files:
+                    for t in file_types:
+                        if f[-len(t):].lower() == t:
+                            file_path = os.path.join(dirpath, f)
+                            dest = os.path.join(os.path.split(self.root)[1] + marker, \
+                                file_path[len(self.FIS_root) + 1:])
+                            if(zip_file):
+                                self.files_zipped_count = self.files_zipped_count + 1
+                                zip_file.write(file_path, dest)
+                            files_written = files_written + 1
+                            break
+            self.print_out("\tAdded %d file(s) to zip" % files_written)
 
     def get_routes_shot_closest_to_time(self, routeTime, ideal_time):
         """Returns a list of paths to the three routes shot closest to a
