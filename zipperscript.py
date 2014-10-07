@@ -1,7 +1,9 @@
 from __future__ import division
 import easygui as eg
-import os, zlib, re, datetime, getpass
+import os, zlib, re, datetime, getpass, tkMessageBox, sys
 import zipfile as z
+import Tkinter as tk
+from tkFileDialog import askdirectory
 
 class ZipperScript():
 
@@ -11,77 +13,112 @@ class ZipperScript():
         validation data.  Also creates a third zip file with any gps, rtf and
         txt files found."""
 
-        self.root = eg.diropenbox()  # ask user for date directory to zip
 
-        if self.root:
-            # create log file for troubleshooting
-            start = datetime.datetime.now()
-            log_name = os.path.join(os.path.split(self.root)[0], "zipperscript_log_" \
-                    + getpass.getuser() + "_" + start.strftime("%y%m%d%H%M%S") + ".txt")
-            self.log = open(log_name, "w")
-            if self.log:
-                self.files_zipped_count = 0
-                self.print_out("Zipperscript log " + str(start))
-                self.print_out("This file created when zipperscript is run for " + \
-                        "troubleshooting purposes.  Include it in the FTP upload")
-                self.print_out("User has selected " + str(self.root))
-                self.route_paths = []
-                self.pospacs = []
-                self.dmi_cal = []
-                # find route_paths, pospacs and dmi_cal files
-                self.find_route_directories()
+        self.gui = tk.Tk() #GUI Stuff
+        self.gui.withdraw() #Don't want a main window
 
-                self.zip_file_val = 0
-                self.zip_val_name = 0
-                self.zip_val_path = 0
-                self.zip_validations()
+        if len(sys.argv)<2:
+            self.root = askdirectory()
+        else:
+            self.root = sys.argv[1]
 
-                #Zip up collection data
-                zip_file_name = os.path.split(self.root)[1] \
-                        + "_" + getpass.getuser() + "_Collection.zip"
-                zip_file_path = os.path.join(os.path.split(self.root)[0], zip_file_name)
-                zip_file_collection = z.ZipFile(zip_file_path, "w", allowZip64=True)
-                self.zip_collection_routes(zip_file_collection)
+        self.vehicle_name=""
+        self.get_user_input("Enter Vehicle Name", self.vehicle_name, self.run_zipperscript)
 
-                #Zip up gps and txt files
-                self.print_out("\n***** STARTING CRITICAL ZIP *****")
-                zip_crit_name = "___" + os.path.split(self.root)[1] \
-                        + "_" + getpass.getuser() + "_Critical.zip"
-                zip_crit_path = os.path.join(os.path.split(self.root)[0], zip_crit_name)
-                zip_file_crit = z.ZipFile(zip_crit_path, "w", allowZip64=True)
-                self.zip_route(zip_file_crit, self.root, [".txt", ".rtf" ,".gps"], \
-                        "_" + getpass.getuser() + "_Critical")
-                self.print_out("\n***** ZIP COMPLETE *****")
-                self.print_out("Files zipped:")
-                zip_file_crit.close()
-                for i in zip_file_crit.infolist():
-                    self.print_out("\t%s\t%s" % (i.filename, self.pretty_size(i.compress_size)))
 
-                zip_file_collection.close()
-                for i in zip_file_collection.infolist():
-                    self.print_out("\t%s\t%s" % (i.filename, self.pretty_size(i.compress_size)))
+    def get_user_input(self, message, output, next_step):
 
-                if(self.zip_val_name):
-                    self.zip_file_val.close()
-                    for i in self.zip_file_val.infolist():
-                        self.print_out("\t%s\t%s" % \
-                            (i.filename, self.pretty_size(i.compress_size)))
-                self.print_out("")
+        def OK(user_input):
+            window.destroy()
+            user_input = re.sub(r'\W+', '', user_input)
+            next_step(user_input)
 
+        window = tk.Toplevel()
+        L1 = tk.Label(window, text=message)
+        L1.pack(side = tk.LEFT)
+        E1 = tk.Entry(window, bd =5)
+        E1.pack(side = tk.LEFT)
+        B1 = tk.Button(window, text="OK", command = lambda: OK(E1.get()))
+        B1.pack(side = tk.LEFT)
+        window.lift()
+        window.mainloop()
+
+
+    def run_zipperscript(self, vehicle_name):
+        self.vehicle = vehicle_name
+        # create log file for troubleshooting
+        start = datetime.datetime.now()
+        log_name = os.path.join(os.path.split(self.root)[0], "zipperscript_log_" \
+                + self.vehicle + "_" + start.strftime("%y%m%d%H%M%S") + ".txt")
+        self.log = open(log_name, "w")
+        if self.log:
+            self.files_zipped_count = 0
+            self.print_out("Zipperscript log " + str(start))
+            self.print_out("This file created when zipperscript is run for " + \
+                    "troubleshooting purposes.  Include it in the FTP upload")
+            self.print_out("User has selected " + str(self.root))
+            self.route_paths = []
+            self.pospacs = []
+            self.dmi_cal = []
+            # find route_paths, pospacs and dmi_cal files
+            self.find_route_directories()
+
+            self.zip_file_val = 0
+            self.zip_val_name = 0
+            self.zip_val_path = 0
+            self.zip_validations()
+
+            #Zip up collection data
+            zip_file_name = os.path.split(self.root)[1] \
+                    + "_" + self.vehicle + "_Collection.zip"
+            zip_file_path = os.path.join(os.path.split(self.root)[0], zip_file_name)
+            zip_file_collection = z.ZipFile(zip_file_path, "w", z.ZIP_DEFLATED, allowZip64=True)
+            self.zip_collection_routes(zip_file_collection)
+
+            #Zip up gps and txt files
+            self.print_out("\n***** STARTING CRITICAL ZIP *****")
+            zip_crit_name = "___" + os.path.split(self.root)[1] \
+                    + "_" + self.vehicle + "_Critical.zip"
+            zip_crit_path = os.path.join(os.path.split(self.root)[0], zip_crit_name)
+            zip_file_crit = z.ZipFile(zip_crit_path, "w", z.ZIP_DEFLATED, allowZip64=True)
+            self.zip_route(zip_file_crit, self.root, [".txt", ".rtf" ,".gps"], \
+                    "_" + self.vehicle + "_Critical")
+            self.print_out("\n***** ZIP COMPLETE *****")
+            self.print_out("Files zipped:")
+            zip_file_crit.close()
+            for i in zip_file_crit.infolist():
+                self.print_out("\t%s\t%s" % (i.filename, self.pretty_size(i.compress_size)))
+
+            zip_file_collection.close()
+            for i in zip_file_collection.infolist():
+                self.print_out("\t%s\t%s" % (i.filename, self.pretty_size(i.compress_size)))
+
+            if(self.zip_val_name):
+                self.zip_file_val.close()
+                for i in self.zip_file_val.infolist():
+                    self.print_out("\t%s\t%s" % \
+                        (i.filename, self.pretty_size(i.compress_size)))
+            self.print_out("")
+
+            self.print_out("%s\t%s" % \
+                    (zip_crit_name, self.pretty_size(os.path.getsize(zip_crit_path))))
+            end = datetime.datetime.now()
+            self.print_out("%s\t%s" % \
+                    (zip_file_name, self.pretty_size(os.path.getsize(zip_file_path))))
+            if(self.zip_val_name):
                 self.print_out("%s\t%s" % \
-                        (zip_crit_name, self.pretty_size(os.path.getsize(zip_crit_path))))
-                end = datetime.datetime.now()
-                self.print_out("%s\t%s" % \
-                        (zip_file_name, self.pretty_size(os.path.getsize(zip_file_path))))
-                if(self.zip_val_name):
-                    self.print_out("%s\t%s" % \
-                        (self.zip_val_name, self.pretty_size(os.path.getsize(self.zip_val_path))))
-                self.print_out("Total files zipped: " + str(self.files_zipped_count))
-                self.print_out("Total time for zip: " + str(end - start))
-                self.log.close()
-                eg.msgbox("Success!  Zipped %s files in %s seconds.  Files are located at %s" % \
-                        (str(self.files_zipped_count), str((end - start).total_seconds()), \
-                            os.path.split(self.root)[0]))
+                    (self.zip_val_name, self.pretty_size(os.path.getsize(self.zip_val_path))))
+            self.print_out("Total files zipped: " + str(self.files_zipped_count))
+            self.print_out("Total time for zip: " + str(end - start))
+            self.log.close()
+
+            tkMessageBox.showinfo("Zip Complete", \
+                    "Success!  Zipped %s files in %s seconds.  Files are located at %s" % \
+                    (str(self.files_zipped_count),\
+                    str((end - start).total_seconds()),\
+                    os.path.split(self.root)[0]))
+
+            self.gui.destroy()
 
 
     def print_out(self, output):
@@ -140,15 +177,15 @@ class ZipperScript():
         """Checks list of route files for names with validation tag.  If any are
         found, creates validation zip and zips up the correct files and removes
         the route from self.route_paths."""
-        marker = "_" + getpass.getuser() + "_Validations"
+        marker = "_" + self.vehicle + "_Validations"
         pospac_to_add = []
-        already_added_first_route_images = []
+        already_added_images = []
 
         #The list below removes items from the list as it iterates through it,
         #so we're iterating over a copy
         for p in list(self.route_paths):
             f = os.path.split(p)[1]
-            if f[0:3] == "LRS":
+            if f[0:3].upper() == "LRS":
                 if not self.zip_file_val:
                     self.create_validation_zip()
                 self.route_paths.remove(p)
@@ -157,15 +194,15 @@ class ZipperScript():
                 for p in self.dmi_cal:
                     self.write_to_zip(self.zip_file_val, p, marker)
 
-            elif f[0:5] == "ASSET" or f[0:3] == "VCM":
+            elif f[0:5].upper() == "ASSET" or f[0:3].upper() == "VCM":
                 if not self.zip_file_val:
                     self.create_validation_zip()
                 self.route_paths.remove(p)
                 self.zip_route(self.zip_file_val, p, \
-                    [".gps", ".raw", ".hdl", ".log", ".rdf"], marker)
+                    [".gps", ".raw", ".hdl", ".log", ".rdf", ".hdlg", ".hdli", ".hdls"], marker)
                 #NEED ONLY FIRST ROUTE OF IMAGES
-                if(f[:-2] not in already_added_first_route_images):
-                    already_added_first_route_images.append(f[:-2])
+                if(f[:-2] not in already_added_images):
+                    already_added_images.append(f[:-2])
                     self.zip_route(self.zip_file_val, p, [".jpg"], marker)
                 #NEED TO FIND POSPAC
                 for POSPAC in self.pospacs:
@@ -173,32 +210,18 @@ class ZipperScript():
                     if(re.search(pospacdir,p) and POSPAC not in pospac_to_add):
                         pospac_to_add.append(POSPAC)
 
-            elif f[0:4] == "PAVE":
+            elif f[0:4].upper() == "PAVE" or f[0:8].upper() == "DISTRESS":
                 if not self.zip_file_val:
                     self.create_validation_zip()
                 self.route_paths.remove(p)
-                self.zip_route(self.zip_file_val, p, [".gps", ".rsp", ".fis",\
-                    ".log", ".rdf", ".jpg"], marker)
+                self.zip_route(self.zip_file_val, p, 
+                            [".gps", ".rsp", ".fis", ".log", ".rdf"], marker)
+                #NEED ONLY FIRST ROUTE OF IMAGES
+                if(f[:-2] not in already_added_images):
+                    already_added_images.append(f[:-2])
+                    self.zip_route(self.zip_file_val, p, [".jpg"], marker)
 
-            elif f[0:8] == "DISTRESS":
-                if not self.zip_file_val:
-                    self.create_validation_zip()
-                self.route_paths.remove(p)
-                self.zip_route(self.zip_file_val, p, [".gps", ".rsp", ".fis",\
-                    ".log", ".rdf", ".jpg"], marker)
-
-            elif f[0:3] == "GPS":
-                if not self.zip_file_val:
-                    self.create_validation_zip()
-                self.route_paths.remove(p)
-                self.zip_route(self.zip_file_val, p, [".gps", ".raw", ".jpg", ".log"], marker)
-                #NEED TO FIND POSPAC
-                for POSPAC in self.pospacs:
-                    pospacdir = os.path.split(POSPAC)[0]
-                    if(re.search(pospacdir,p) and POSPAC not in pospac_to_add):
-                        pospac_to_add.append(POSPAC)
-
-            elif f[0:6] == "THIRTY":
+            elif f[0:3].upper() == "GPS":
                 if not self.zip_file_val:
                     self.create_validation_zip()
                 self.route_paths.remove(p)
@@ -209,7 +232,16 @@ class ZipperScript():
                     if(re.search(pospacdir,p) and POSPAC not in pospac_to_add):
                         pospac_to_add.append(POSPAC)
 
-
+            elif f[0:6].upper() == "THIRTY":
+                if not self.zip_file_val:
+                    self.create_validation_zip()
+                self.route_paths.remove(p)
+                self.zip_route(self.zip_file_val, p, [".gps", ".raw", ".jpg", ".log"], marker)
+                #NEED TO FIND POSPAC
+                for POSPAC in self.pospacs:
+                    pospacdir = os.path.split(POSPAC)[0]
+                    if(re.search(pospacdir,p) and POSPAC not in pospac_to_add):
+                        pospac_to_add.append(POSPAC)
 
         for p in pospac_to_add:
             self.write_to_zip(self.zip_file_val, p, marker)
@@ -220,14 +252,15 @@ class ZipperScript():
         found.  Creates validation file and zips up valdiations."""
         self.print_out("\n***** STARTING VALIDATION ZIP *****")
         self.zip_val_name = os.path.split(self.root)[1] + \
-                "_" + getpass.getuser() + "_Validations.zip"
+                "_" + self.vehicle + "_Validations.zip"
         self.zip_val_path = os.path.join(os.path.split(self.root)[0], self.zip_val_name)
-        self.zip_file_val = z.ZipFile(self.zip_val_path, "w", allowZip64 = True)
+        self.zip_file_val = z.ZipFile(self.zip_val_path, "w",
+                        z.ZIP_DEFLATED, allowZip64 = True)
 
     def zip_collection_routes(self, zip_file):
         """Zips up regular collection route files."""
         self.print_out("\n***** STARTING COLLECTION ZIP *****")
-        marker = "_" + getpass.getuser() + "_Collection"
+        marker = "_" + self.vehicle + "_Collection"
         for p in self.route_paths: #zip all non-image files in route directories
             self.zip_route(zip_file, p, \
                     [".txt", ".pdf", ".rut", ".gps", ".raw", ".log", \
@@ -270,6 +303,7 @@ class ZipperScript():
                         if f[-len(t):].lower() == t:
                             self.write_to_zip(zip_file, os.path.join(dirpath, f), marker)
                             files_written = files_written + 1
+                            break
             self.print_out("\tAdded %d file(s) to zip" % files_written)
 
     def write_to_zip(self, zip_file, file_path, marker):
@@ -294,7 +328,7 @@ class ZipperScript():
         tags being close together, the same images will not be zipped up twice.
         """
         self.print_out("\n***** ADDING FEATURE TAG IMAGES *****")
-        marker = "_" + getpass.getuser() + "_Collection"
+        marker = "_" + self.vehicle + "_Collection"
         for p in self.route_paths:
             for f in os.listdir(p):
                 if f[-4:].lower() == ".fea":
@@ -326,7 +360,7 @@ class ZipperScript():
         and end of these routes will be included.
         """
         self.print_out("\n***** ADDING SAMPLE IMAGES *****")
-        marker = "_" + getpass.getuser() + "_Collection"
+        marker = "_" + self.vehicle + "_Collection"
         #IGNORE BURN AND BOUNCE ROUTES
         for p in self.route_paths:
             route_name = os.path.split(p)[1].lower()
@@ -373,9 +407,9 @@ class ZipperScript():
 
         #Get two FIS files
         self.print_out("\n***** ADDING FIS FILES *****")
-        if(len(morning_routes) > 0):
+        if len(morning_routes) > 0:
             self.zip_route(zip_file, morning_routes[0], ["000001.fis"], marker)
-        if(len(evening_routes) > 0):
+        if len(evening_routes) > 0:
             self.zip_route(zip_file, evening_routes[0], ["000001.fis"], marker)
 
     def get_routes_shot_closest_to_time(self, routeTime, ideal_time):
@@ -434,4 +468,5 @@ class ZipperScript():
             if bytes>=factor:
                 return "%.3g %s" % (bytes/factor, suffix)
 
-zipper = ZipperScript()
+if __name__ == '__main__':
+    zipper = ZipperScript()

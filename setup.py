@@ -9,12 +9,12 @@ from setuptools import setup
 
 APP = ['zipperscript.py']
 DATA_FILES = []
-OPTIONS = {'argv_emulation': True}
+OPTIONS = {'argv_emulation': True, 'excludes': ['']}
 
 setup(
     app=APP,
     data_files=DATA_FILES,
     options={'py2app': OPTIONS},
     setup_requires=['py2app'],
-    version="4.0.0"
+    version="4.0.4"
 )
