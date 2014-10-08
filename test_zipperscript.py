@@ -46,4 +46,3 @@ class D(namedtuple):
 	def __init__(self, name, contents):
 		self.name = name
 		self.contents = contents
-

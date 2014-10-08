@@ -29,6 +29,7 @@ class ZipperScript():
             print("Error. No root specified and GUI is suppressed")
             sys.exit(1)
 
+<<<<<<< HEAD
         if(self.root):
             if vehicle:
                 #vehicle name specificied in argv
@@ -41,6 +42,9 @@ class ZipperScript():
                 self.run_zipperscript("vehicle_name")
                 
         self.FIS_root = askdirectory(initialdir = "/Volumes/", title = "Choose LCMS computer root directory")
+=======
+        self.FIS_root = askdirectory(initialdir = "/Volumes/", title = "Choose LCMS computer date directory")
+>>>>>>> fixed untracked files
 
         if vehicle:
             #vehicle name specificied in argv
@@ -488,6 +492,10 @@ class ZipperScript():
                             files_written = files_written + 1
                             break
             self.print_out("\tAdded %d file(s) to zip" % files_written)
+            if files_written==0:
+                tkMessageBox.showinfo("WARNING", \
+                        "Could not find FIS file for route %s" % \
+                        (route_path))
 
     def get_routes_shot_closest_to_time(self, routeTime, ideal_time):
         """Returns a list of paths to the three routes shot closest to a
