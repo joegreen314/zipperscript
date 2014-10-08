@@ -1,4 +1,4 @@
 Old\ Zipperscripts/
 Test/
 dist/
-build/
+build/**
