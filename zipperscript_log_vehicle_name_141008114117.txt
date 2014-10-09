@@ -1,0 +1,10 @@
+11:41:17 Zipperscript log 2014-10-08 11:41:17.967687
+11:41:17 This file created when zipperscript is run for troubleshooting purposes.  Include it in the FTP upload
+11:41:17 User has selected -s
+11:41:17 
+***** SEARCHING FOR ROUTE DIRECTORIES *****
+11:41:17 No route directories found
+11:41:17 No POSPAC session files found
+11:41:17 No DMI_Cal files found
+11:41:17 
+***** STARTING COLLECTION ZIP *****

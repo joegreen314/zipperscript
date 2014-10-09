@@ -4,29 +4,40 @@ import os, zlib, re, datetime, getpass, tkMessageBox, sys
 import zipfile as z
 import Tkinter as tk
 from tkFileDialog import askdirectory
+from optparse import OptionParser
 
 class ZipperScript():
 
-    def __init__(self):
+    def __init__(self, root, vehicle, show_gui):
         """Inits ZipperScript.  Creates zip_file from data collected.  If
         validation data is present, will create a separate zip file with
         validation data.  Also creates a third zip file with any gps, rtf and
         txt files found."""
 
-
+        self.show_gui = show_gui
         self.gui = tk.Tk() #GUI Stuff
         self.gui.withdraw() #Don't want a main window
 
-        if len(sys.argv)<2:
+        if root:
+            self.root = root
+        elif self.show_gui:
             self.root = askdirectory()
         else:
-            self.root = sys.argv[1]
+            print("Error. No root specified and GUI is suppressed")
+            sys.exit(1)
 
-        self.vehicle_name=""
-        self.get_user_input("Enter Vehicle Name", self.vehicle_name, self.run_zipperscript)
+        if vehicle:
+            #vehicle name specificied in argv
+            self.run_zipperscript(vehicle)
+        elif self.show_gui:
+            #vehicle name not speficied, prompt user for name
+            self.get_user_input("Enter Vehicle Name", self.run_zipperscript)
+        else:
+            #Message boxes disabled.  Use default name
+            self.run_zipperscript("vehicle_name")
 
 
-    def get_user_input(self, message, output, next_step):
+    def get_user_input(self, message, next_step):
 
         def OK(user_input):
             window.destroy()
@@ -48,8 +59,9 @@ class ZipperScript():
         self.vehicle = vehicle_name
         # create log file for troubleshooting
         start = datetime.datetime.now()
-        log_name = os.path.join(os.path.split(self.root)[0], "zipperscript_log_" \
-                + self.vehicle + "_" + start.strftime("%y%m%d%H%M%S") + ".txt")
+        self.output_dir_name = "Zipperscript_Output"
+        log_name = os.path.join(os.path.split(self.root)[0], self.output_dir_name,
+                "zipperscript_log_" + self.vehicle + "_" + start.strftime("%y%m%d%H%M%S") + ".txt")
         self.log = open(log_name, "w")
         if self.log:
             self.files_zipped_count = 0
@@ -57,6 +69,7 @@ class ZipperScript():
             self.print_out("This file created when zipperscript is run for " + \
                     "troubleshooting purposes.  Include it in the FTP upload")
             self.print_out("User has selected " + str(self.root))
+            self.output_dir_name = "Zipperscript_Output"
             self.route_paths = []
             self.pospacs = []
             self.dmi_cal = []
@@ -71,7 +84,8 @@ class ZipperScript():
             #Zip up collection data
             zip_file_name = os.path.split(self.root)[1] \
                     + "_" + self.vehicle + "_Collection.zip"
-            zip_file_path = os.path.join(os.path.split(self.root)[0], zip_file_name)
+            zip_file_path = os.path.join(os.path.split(self.root)[0],
+                    self.output_dir_name, zip_file_name)
             zip_file_collection = z.ZipFile(zip_file_path, "w", z.ZIP_DEFLATED, allowZip64=True)
             self.zip_collection_routes(zip_file_collection)
 
@@ -79,7 +93,8 @@ class ZipperScript():
             self.print_out("\n***** STARTING CRITICAL ZIP *****")
             zip_crit_name = "___" + os.path.split(self.root)[1] \
                     + "_" + self.vehicle + "_Critical.zip"
-            zip_crit_path = os.path.join(os.path.split(self.root)[0], zip_crit_name)
+            zip_crit_path = os.path.join(os.path.split(self.root)[0],
+                    self.output_dir_name, zip_crit_name)
             zip_file_crit = z.ZipFile(zip_crit_path, "w", z.ZIP_DEFLATED, allowZip64=True)
             self.zip_route(zip_file_crit, self.root, [".txt", ".rtf" ,".gps"], \
                     "_" + self.vehicle + "_Critical")
@@ -112,11 +127,12 @@ class ZipperScript():
             self.print_out("Total time for zip: " + str(end - start))
             self.log.close()
 
-            tkMessageBox.showinfo("Zip Complete", \
-                    "Success!  Zipped %s files in %s seconds.  Files are located at %s" % \
-                    (str(self.files_zipped_count),\
-                    str((end - start).total_seconds()),\
-                    os.path.split(self.root)[0]))
+            if(self.show_gui):
+                tkMessageBox.showinfo("Zip Complete", \
+                        "Success!  Zipped %s files in %s seconds.  Files are located at %s" % \
+                        (str(self.files_zipped_count),\
+                        str((end - start).total_seconds()),\
+                        os.path.split(self.root)[0]))
 
             self.gui.destroy()
 
@@ -253,7 +269,8 @@ class ZipperScript():
         self.print_out("\n***** STARTING VALIDATION ZIP *****")
         self.zip_val_name = os.path.split(self.root)[1] + \
                 "_" + self.vehicle + "_Validations.zip"
-        self.zip_val_path = os.path.join(os.path.split(self.root)[0], self.zip_val_name)
+        self.zip_val_path = os.path.join(os.path.split(self.root)[0],
+                self.output_dir_name, self.zip_val_name)
         self.zip_file_val = z.ZipFile(self.zip_val_path, "w",
                         z.ZIP_DEFLATED, allowZip64 = True)
 
@@ -469,4 +486,14 @@ class ZipperScript():
                 return "%.3g %s" % (bytes/factor, suffix)
 
 if __name__ == '__main__':
-    zipper = ZipperScript()
+
+    parser = OptionParser()
+    parser.add_option("-s", action="store_false", dest="show_gui", default = True,
+            help = "suppress UI messages")
+    parser.add_option("--root", action="store", dest="root", default = False,
+            help = "date directory to be searched")
+    parser.add_option("--vehicle", action="store", dest="vehicle", default = False,
+            help = "vehicle name")
+    (options, args) = parser.parse_args()
+
+    ZipperScript(options.root, options.vehicle, options.show_gui)
