@@ -52,6 +52,8 @@ class ZipperScript():
         B1 = tk.Button(window, text="OK", command = lambda: OK(E1.get()))
         B1.pack(side = tk.LEFT)
         window.lift()
+        window.iconify()
+        window.deiconify()
         window.mainloop()
 
 
@@ -130,9 +132,8 @@ class ZipperScript():
             if(self.show_gui):
                 tkMessageBox.showinfo("Zip Complete", \
                         "Success!  Zipped %s files in %s seconds.  Files are located at %s" % \
-                        (str(self.files_zipped_count),\
-                        str((end - start).total_seconds()),\
-                        os.path.split(self.root)[0]))
+                        (str(self.files_zipped_count), str((end - start).total_seconds()),\
+                        os.path.join(os.path.split(self.root)[0], self.output_dir_name)))
 
             self.gui.destroy()
 
