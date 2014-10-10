@@ -21,39 +21,46 @@ class ZipperScript():
         if root:
             self.root = root
         elif self.show_gui:
-            self.root = askdirectory()
+            self.root = askdirectory(title = "Choose date directory")
         else:
             print("Error. No root specified and GUI is suppressed")
             sys.exit(1)
 
-        if vehicle:
-            #vehicle name specificied in argv
-            self.run_zipperscript(vehicle)
-        elif self.show_gui:
-            #vehicle name not speficied, prompt user for name
-            self.get_user_input("Enter Vehicle Name", self.run_zipperscript)
+        if(self.root):
+            if vehicle:
+                #vehicle name specificied in argv
+                self.run_zipperscript(vehicle)
+            elif self.show_gui:
+                #vehicle name not speficied, prompt user for name
+                self.get_user_input("Enter Vehicle Name", self.run_zipperscript)
+            else:
+                #Message boxes disabled.  Use default name
+                self.run_zipperscript("vehicle_name")
         else:
-            #Message boxes disabled.  Use default name
-            self.run_zipperscript("vehicle_name")
+            self.gui.destroy()
 
 
     def get_user_input(self, message, next_step):
 
         def OK(user_input):
+            window.iconify()
             window.destroy()
             user_input = re.sub(r'\W+', '', user_input)
             next_step(user_input)
 
         window = tk.Toplevel()
+        window.title(message)
         L1 = tk.Label(window, text=message)
         L1.pack(side = tk.LEFT)
         E1 = tk.Entry(window, bd =5)
         E1.pack(side = tk.LEFT)
+        window.bind(sequence = "<Return>", func = lambda d: OK(E1.get()))
         B1 = tk.Button(window, text="OK", command = lambda: OK(E1.get()))
         B1.pack(side = tk.LEFT)
         window.lift()
         window.iconify()
         window.deiconify()
+        E1.focus()
         window.mainloop()
 
 
