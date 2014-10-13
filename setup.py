@@ -13,9 +13,9 @@ OPTIONS = {'argv_emulation': True, 'excludes': ['PIL']}
 
 setup(
     app=APP,
-    name="Zipperscript_HI_50",
+    name="Zipperscript_HI_v51",
     data_files=DATA_FILES,
     options={'py2app': OPTIONS},
     setup_requires=['py2app'],
-    version="Hawaii branch 4.0.50"
+    version="Hawaii branch 4.0.51"
 )

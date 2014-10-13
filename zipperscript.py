@@ -24,27 +24,21 @@ class ZipperScript():
         if root:
             self.root = root
         elif self.show_gui:
-            self.root = askdirectory(title = "Choose root directory")
+            self.root = askdirectory(initialdir = "/", title = "Choose root directory")
         else:
             print("Error. No root specified and GUI is suppressed")
             sys.exit(1)
 
-<<<<<<< HEAD
-        if(self.root):
-            if vehicle:
-                #vehicle name specificied in argv
-                self.run_zipperscript(vehicle)
-            elif self.show_gui:
-                #vehicle name not speficied, prompt user for name
-                self.get_user_input("Enter Vehicle Name", self.run_zipperscript)
-            else:
-                #Message boxes disabled.  Use default name
-                self.run_zipperscript("vehicle_name")
-                
+        if not self.root:
+            print self.root, root
+            print("Error. User cancelled root directory selction")
+            sys.exit(1)
+
         self.FIS_root = askdirectory(initialdir = "/Volumes/", title = "Choose LCMS computer root directory")
-=======
-        self.FIS_root = askdirectory(initialdir = "/Volumes/", title = "Choose LCMS computer date directory")
->>>>>>> fixed untracked files
+
+        if not self.FIS_root:
+            print("Error. User cancelled FIS directory selction")
+            sys.exit(1)
 
         if vehicle:
             #vehicle name specificied in argv
@@ -84,8 +78,14 @@ class ZipperScript():
         # create log file for troubleshooting
         start = datetime.datetime.now()
         self.output_dir_name = "Zipperscript_Output"
-        log_name = os.path.join(os.path.split(self.root)[0], self.output_dir_name,
+        self.output_dir_path = os.path.join(os.path.split(self.root)[0], self.output_dir_name)
+        log_name = os.path.join(self.output_dir_path,
                 "zipperscript_log_" + self.vehicle + "_" + start.strftime("%y%m%d%H%M%S") + ".txt")
+
+        if not os.path.exists(self.output_dir_path):
+            print ("Creating directory for output at " + self.output_dir_path)
+            os.makedirs(self.output_dir_path)
+
         self.log = open(log_name, "w")
         if self.log:
             self.files_zipped_count = 0
@@ -563,5 +563,10 @@ if __name__ == '__main__':
     parser.add_option("--vehicle", action="store", dest="vehicle", default = False,
             help = "vehicle name")
     (options, args) = parser.parse_args()
+    
+    if args:
+        root = args[0]
+    else:
+        root = options.root
 
-    ZipperScript(options.root, options.vehicle, options.show_gui)
+    ZipperScript(root, options.vehicle, options.show_gui)
