@@ -1,49 +1,167 @@
 import unittest
 import zipperscript as z
+import shutil, zipfile, os, sys
 from collections import namedtuple
 
 class testZipperscript:
 
-	def setup(self):
-		print ("Running setup")
-		self.root = "/Users/joegreen/Developer/Zipper/Test/ZipperTest2"
-		self.vehicle = "vehicle"
-		self.show_gui = False
+    def setup(self):
+        print ("Running setup")
+        self.root = "/Users/joegreen/Developer/Zipper/Test"
+        self.vehicle = "vehicle"
+        self.show_gui = False
 
-	def teardown(self):
-		print ("Running teardown")
+        self.root = os.path.join(self.root, "tmptest")
+        self.in_path = os.path.join(self.root, "in_files")
+        self.zipper_output_path = os.path.join(self.root, "Zipperscript_Output")
+        self.out_path = os.path.join(self.root, "out_files")
 
-	def create_test_files(self, files):
-		#files: named tuple of named tuples and strings, representing directories and files.
-		
+        if os.path.exists(self.root):
+            print self.root + " already exists.  Deleting it.  CHANGE THIS!"
+            shutil.rmtree(self.root)
+        os.mkdir(self.root)
+
+        if os.path.exists(self.in_path):
+            print self.in_path +" already exists"
+        else:
+            os.mkdir(self.in_path)
+
+    def teardown(self):
+        print ("Running teardown")
+        #shutil.rmtree(self.root)
 
 
-	def test_test(self):
-		route1 = D("ROUTE01", [
-				f("ROUTE01.txt"),
-				f("ROUTE01.rtf"),
-				f("ROUTE01.rut"),
-				f("ROUTE01.gps"),
-				f("ROUTE01.raw"),
-				f("ROUTE01.log"),
-				f("ROUTE01.rdf"),
-				f("ROUTE01.rsp"),
-				f("ROUTE01.hdlg"),
-				f("ROUTE01.iri"),
-				f("ROUTE01.badext")])
-		pospac1 = d("1234567_1234", [route1, f("1234567_1234.000")])
-		date1 = d("Todays_date", [pospac1])
+    def create_files(self, path, directory):
+        os.mkdir(os.path.join(path, directory.name))
+        for obj in directory.contents:
+            print "Looking at " + obj.name + obj.__class__.__name__
+            if obj.__class__.__name__ == "D":
+                self.create_files(os.path.join(path, directory.name), obj)
+            elif obj.__class__.__name__ == "F":
+                with open(os.path.join(path, directory.name, obj.name), 'w+') as f:
+                    f.write(obj.contents)
 
-		self.create_test_files(self, self.root, date1)
-		z.ZipperScript(self.root, self.vehicle, self.show_gui)
+    def unzip(self, in_files, out_files):
+        if not os.path.exists(out_files):
+            os.mkdir(out_files)
+        for f in os.listdir(in_files):
+            if f.endswith(".zip"):
+                with zipfile.ZipFile(os.path.join(in_files, f)) as zf:
+                    zf.extractall(out_files)
 
-class F(nametuple):
-	def __init__(self, name, contents = ""):
-		self.name = name
-		self.contents = contents
+    def get_files(self, path):
+        directory = D(os.path.split(path)[1], [])
+        for obj in os.listdir(path):
+            obj_path = os.path.join(path, obj)
+            if os.path.isdir(obj_path):
+                new_dir = self.get_files(obj_path)
+                directory.contents.append(new_dir)
+            else:
+                new_file=""
+                with open(obj_path, 'r') as f:
+                    new_file = F(obj, f.read())
+                directory.contents.append(new_file)
+        return directory
 
-class D(namedtuple):
-	def __init__(self, name, contents):
-		self.name = name
-		self.contents = contents
+    def test_empty_route(self):
+        date1 = D("Empty_date_dir", [])
+        self.create_files(self.in_path, date1)
+        z.ZipperScript(self.in_path, self.vehicle, self.show_gui)
+        self.unzip(self.zipper_output_path, self.out_path)
+        zipper_output = self.get_files(self.out_path)
+
+
+    def test_crit_file(self):
+        route1 = D("ROUTE01", [
+                F("ROUTE01.txt"),
+                F("ROUTE01.rtf"),
+                F("ROUTE01.rut"),
+                F("ROUTE01.gps"),
+                F("ROUTE01.raw"),
+                F("ROUTE01.log"),
+                F("ROUTE01.rdf"),
+                F("ROUTE01.rsp"),
+                F("ROUTE01.hdlg"),
+                F("ROUTE01.iri")])
+        pospac1 = D("1234567_1234", [route1, F("1234567_1234.000")])
+        date1 = D("Todays_date", [pospac1])
+        print date1
+
+        self.create_files(self.in_path, date1)
+        z.ZipperScript(self.in_path, self.vehicle, self.show_gui)
+        self.unzip(self.zipper_output_path, self.out_path)
+        zipper_output = self.get_files(self.out_path)
+        print zipper_output
+
+        crit_route1 = D("ROUTE01", [
+                F("ROUTE01.txt"),
+                F("ROUTE01.rtf"),
+                F("ROUTE01.gps"),
+                F("ROUTE01.log")])
+        crit_pospac1 = D("1234567_1234", [crit_route1])
+        crit_date1 = D("Todays_date", [crit_pospac1])
+
+        for obj in zipper_output.contents:
+            if obj.name.endswith("Critical"):
+                print "Zipper_output of critical ", obj.contents[0]
+                print "Should match this output", crit_date1
+                assert obj.contents[0] == crit_date1
+
+
+
+
+class D():
+    def __init__(self, name, contents):
+
+        self.name = name
+        self.contents = contents
+
+    def __str__(self):
+        output = "< D: " + str(self.name) + "|"
+        for obj in self.contents:
+            #print output + "!@#$" + obj.name
+            output = output + " " + str(obj)
+        output = output + ">"
+        return str(output)
+
+    def __eq__(self, other):
+        try:
+            output = True
+            for obj1 in self.contents:
+                found_a_match = False
+                for obj2 in other.contents:
+                    if obj1==obj2:
+                        found_a_match = True
+                        break
+                if not found_a_match:
+                    output = False
+                    break
+            return output and isinstance(other, self.__class__) and self.name == other.name
+
+        except:
+            return False
+
+class F(D):
+    def __init__(self, name, contents = ""):
+        self.name = name
+        self.contents = contents
+
+
+    def __str__(self):
+        output = "< F: " + str(self.name) + "|"
+        for obj in self.contents:
+            output = output + " " + str(obj)
+        output = output + ">"
+        return output
+
+
+    def __eq__(self, other):
+        try:
+            if isinstance(other, self.__class__) and\
+                    self.name == other.name and self.contents == other.contents:
+                return True
+            else:
+                return False
+        except:
+            return False
 

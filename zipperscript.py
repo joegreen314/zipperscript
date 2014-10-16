@@ -24,7 +24,6 @@ class ZipperScript():
             self.root = askdirectory(title = "Choose date directory")
         else:
             print("Error. No root specified and GUI is suppressed")
-            sys.exit(1)
 
         if(self.root):
             if vehicle:
@@ -38,6 +37,7 @@ class ZipperScript():
                 self.run_zipperscript("vehicle_name")
         else:
             self.gui.destroy()
+            sys.exit(1)
 
 
     def get_user_input(self, message, next_step):
@@ -68,10 +68,15 @@ class ZipperScript():
         self.vehicle = vehicle_name
         # create log file for troubleshooting
         start = datetime.datetime.now()
-        self.output_dir_name = "Zipperscript_Output"
-        log_name = os.path.join(os.path.split(self.root)[0], self.output_dir_name,
+        output_dir_name = "Zipperscript_Output"
+
+        self.output_dir_path = os.path.join(os.path.split(self.root)[0], output_dir_name)
+        if not os.path.exists(self.output_dir_path):
+            os.makedirs(self.output_dir_path)
+
+        log_name = os.path.join(self.output_dir_path,
                 "zipperscript_log_" + self.vehicle + "_" + start.strftime("%y%m%d%H%M%S") + ".txt")
-        self.log = open(log_name, "w")
+        self.log = open(log_name, "w+")
         if self.log:
             self.files_zipped_count = 0
             self.print_out("Zipperscript log " + str(start))
@@ -105,7 +110,7 @@ class ZipperScript():
             zip_crit_path = os.path.join(os.path.split(self.root)[0],
                     self.output_dir_name, zip_crit_name)
             zip_file_crit = z.ZipFile(zip_crit_path, "w", z.ZIP_DEFLATED, allowZip64=True)
-            self.zip_route(zip_file_crit, self.root, [".txt", ".rtf" ,".gps"], \
+            self.zip_route(zip_file_crit, self.root, [".txt", ".rtf" ,".gps", ".log"], \
                     "_" + self.vehicle + "_Critical")
             self.print_out("\n***** ZIP COMPLETE *****")
             self.print_out("Files zipped:")
@@ -140,9 +145,12 @@ class ZipperScript():
                 tkMessageBox.showinfo("Zip Complete", \
                         "Success!  Zipped %s files in %s seconds.  Files are located at %s" % \
                         (str(self.files_zipped_count), str((end - start).total_seconds()),\
-                        os.path.join(os.path.split(self.root)[0], self.output_dir_name)))
-
-            self.gui.destroy()
+                        os.path.join(os.path.split(self.root)[0], self.output_dir_name)))    
+        else:
+            print "Could not create log file.  Exiting"
+            sys.exit(1)
+        self.gui.destroy()
+        #sys.exit(0)
 
 
     def print_out(self, output):
@@ -400,9 +408,14 @@ class ZipperScript():
             for f in os.listdir(p):
                 if f[-4:]== ".log":
                     log_lines = open(os.path.join(p, f), "r").readlines()
-                    t = log_lines[0][-16 : -8]
-                    time[p] = datetime.datetime.strptime(t, "%H:%M:%S")
-                    lastFrame[p] = int(log_lines[-1][0 : 5])
+                    if len(log_lines):
+                        t = log_lines[0][-16 : -8]
+                        time[p] = datetime.datetime.strptime(t, "%H:%M:%S")
+                        lastFrame[p] = int(log_lines[-1][0 : 5])
+                    else:
+                        self.print_out("Bad log file: " + f + "  Removing route from route list")
+                        self.route_paths.remove(p)
+                    break
 
         #SELECT SAMPLE ROUTES BASED ON TIME SHOT
         morning_time = datetime.datetime.strptime("7:00:00", "%H:%M:%S")
@@ -504,4 +517,9 @@ if __name__ == '__main__':
             help = "vehicle name")
     (options, args) = parser.parse_args()
 
-    ZipperScript(options.root, options.vehicle, options.show_gui)
+    if args:
+        root = args[0]
+    else:
+        root = options.root
+
+    ZipperScript(root, options.vehicle, options.show_gui)

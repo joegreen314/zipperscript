@@ -9,7 +9,7 @@ from setuptools import setup
 
 APP = ['zipperscript.py']
 DATA_FILES = []
-OPTIONS = {'argv_emulation': True, 'excludes': ['']}
+OPTIONS = {'argv_emulation': True, 'excludes': ['PIL']}
 
 setup(
     app=APP,
