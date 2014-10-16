@@ -3,3 +3,4 @@ Test/
 dist/
 build/**
 test.py
+.DS_Store
