@@ -77,7 +77,6 @@ class ZipperScript():
         self.vehicle = vehicle_name
         # create log file for troubleshooting
         start = datetime.datetime.now()
-<<<<<<< HEAD
         output_dir_name = "Zipperscript_Output"
 
         self.output_dir_path = os.path.join(os.path.split(self.root)[0], output_dir_name)
@@ -87,18 +86,6 @@ class ZipperScript():
         log_name = os.path.join(self.output_dir_path,
                 "zipperscript_log_" + self.vehicle + "_" + start.strftime("%y%m%d%H%M%S") + ".txt")
         self.log = open(log_name, "w+")
-=======
-        self.output_dir_name = "Zipperscript_Output"
-        self.output_dir_path = os.path.join(os.path.split(self.root)[0], self.output_dir_name)
-        log_name = os.path.join(self.output_dir_path,
-                "zipperscript_log_" + self.vehicle + "_" + start.strftime("%y%m%d%H%M%S") + ".txt")
-
-        if not os.path.exists(self.output_dir_path):
-            print ("Creating directory for output at " + self.output_dir_path)
-            os.makedirs(self.output_dir_path)
-
-        self.log = open(log_name, "w")
->>>>>>> Fixed some bugs introduced after rebasing with master
         if self.log:
             self.files_zipped_count = 0
             self.print_out("Zipperscript log " + str(start))
@@ -268,7 +255,12 @@ class ZipperScript():
                     self.create_validation_zip()
                 self.route_paths.remove(p)
                 self.zip_route(self.zip_file_val, p, 
-                            [".gps", ".rsp", ".fis", ".log", ".rdf", ".txt"], marker)
+                            [".gps", ".rsp", ".log", ".rdf", ".txt"], marker)
+
+                #HAWAII VERSION ONLY: Need FIS files from Windows computer
+                out = self.FIS_root + p[len(self.root):]
+                self.zip_FISroute(self.zip_file_val, out, [".fis"], marker)
+
                 #NEED ONLY FIRST ROUTE OF IMAGES
                 if(f[:-2] not in already_added_images):
                     already_added_images.append(f[:-2])
@@ -514,7 +506,7 @@ class ZipperScript():
             self.print_out("\tAdded %d file(s) to zip" % files_written)
             if files_written==0:
                 tkMessageBox.showinfo("WARNING", \
-                        "Could not find FIS file for route %s" % \
+                        "Could not find FIS files for route %s" % \
                         (route_path))
 
     def get_routes_shot_closest_to_time(self, routeTime, ideal_time):
@@ -589,12 +581,4 @@ if __name__ == '__main__':
     else:
         root = options.root
 
-<<<<<<< HEAD
-    if args:
-        root = args[0]
-    else:
-        root = options.root
-
-=======
->>>>>>> Fixed some bugs introduced after rebasing with master
     ZipperScript(root, options.vehicle, options.show_gui)
