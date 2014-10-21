@@ -498,6 +498,7 @@ class ZipperScript():
                             file_path = os.path.join(dirpath, f)
                             dest = os.path.join(os.path.split(self.root)[1] + marker, \
                                 file_path[len(self.FIS_root) + 1:])
+
                             if(zip_file):
                                 self.files_zipped_count = self.files_zipped_count + 1
                                 zip_file.write(file_path, dest)
@@ -505,9 +506,8 @@ class ZipperScript():
                             break
             self.print_out("\tAdded %d file(s) to zip" % files_written)
             if files_written==0:
-                tkMessageBox.showinfo("WARNING", \
-                        "Could not find FIS files for route %s" % \
-                        (route_path))
+                tkMessageBox.showinfo("WARNING", 
+                        "Could not find FIS files for route %s" % (route_path))
 
     def get_routes_shot_closest_to_time(self, routeTime, ideal_time):
         """Returns a list of paths to the three routes shot closest to a
