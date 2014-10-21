@@ -222,7 +222,7 @@ class ZipperScript():
                     self.create_validation_zip()
                 self.route_paths.remove(p)
                 self.zip_route(self.zip_file_val, p, \
-                    [".gps", ".log", ".rdf"], marker)
+                    [".gps", ".log", ".rdf", ".rsp"], marker)
                 for p in self.dmi_cal:
                     self.write_to_zip(self.zip_file_val, p, marker)
 
@@ -231,7 +231,7 @@ class ZipperScript():
                     self.create_validation_zip()
                 self.route_paths.remove(p)
                 self.zip_route(self.zip_file_val, p, \
-                    [".gps", ".raw", ".hdl", ".log", ".rdf", ".hdlg", ".hdli", ".hdls"], marker)
+                    [".gps", ".raw", ".hdl", ".log", ".rdf", ".hdlg", ".hdli", ".hdls", ".txt"], marker)
                 #NEED ONLY FIRST ROUTE OF IMAGES
                 if(f[:-2] not in already_added_images):
                     already_added_images.append(f[:-2])
@@ -247,7 +247,7 @@ class ZipperScript():
                     self.create_validation_zip()
                 self.route_paths.remove(p)
                 self.zip_route(self.zip_file_val, p, 
-                            [".gps", ".rsp", ".fis", ".log", ".rdf"], marker)
+                            [".gps", ".rsp", ".fis", ".log", ".rdf", ".txt"], marker)
                 #NEED ONLY FIRST ROUTE OF IMAGES
                 if(f[:-2] not in already_added_images):
                     already_added_images.append(f[:-2])
@@ -395,7 +395,7 @@ class ZipperScript():
         self.print_out("\n***** ADDING SAMPLE IMAGES *****")
         marker = "_" + self.vehicle + "_Collection"
         #IGNORE BURN AND BOUNCE ROUTES
-        for p in self.route_paths:
+        for p in list(self.route_paths):
             route_name = os.path.split(p)[1].lower()
             if re.search("burn", route_name) or re.search("bounce", route_name):
                 self.route_paths.remove(p)
@@ -443,12 +443,17 @@ class ZipperScript():
 
             self.zip_route(zip_file, route, images, marker)
 
-        #Get two FIS files
+        #Grab three FIS files from three routes
         self.print_out("\n***** ADDING FIS FILES *****")
-        if len(morning_routes) > 0:
-            self.zip_route(zip_file, morning_routes[0], ["000001.fis"], marker)
-        if len(evening_routes) > 0:
-            self.zip_route(zip_file, evening_routes[0], ["000001.fis"], marker)
+        FISImages = ["000001.fis", "000006.fis", "000011.fis"]
+        if morning_routes:
+            self.zip_route(zip_file, morning_routes[0], FISImages, marker)
+
+        if midday_routes:
+            self.zip_route(zip_file, midday_routes[0], FISImages, marker)
+
+        if evening_routes:
+            self.zip_route(zip_file, evening_routes[0], FISImages, marker)
 
     def get_routes_shot_closest_to_time(self, routeTime, ideal_time):
         """Returns a list of paths to the three routes shot closest to a
