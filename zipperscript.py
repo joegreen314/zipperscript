@@ -11,7 +11,7 @@ from optparse import OptionParser
 
 class ZipperScript():
 
-    def __init__(self, root, vehicle, show_gui):
+    def __init__(self, root, vehicle, show_gui, FIS_root):
         """Inits ZipperScript.  Creates zip_file from data collected.  If
         validation data is present, will create a separate zip file with
         validation data.  Also creates a third zip file with any gps, rtf and
@@ -33,7 +33,10 @@ class ZipperScript():
             print("Error. User cancelled root directory selction")
             sys.exit(1)
 
-        self.FIS_root = askdirectory(initialdir = "/Volumes/", title = "Choose LCMS computer root directory")
+        if FIS_root:
+            self.FIS_root = FIS_root
+        else:
+            self.FIS_root = askdirectory(initialdir = "/Volumes/", title = "Choose LCMS computer root directory")
 
         if not self.FIS_root:
             print("Error. User cancelled FIS directory selction")
@@ -498,6 +501,7 @@ class ZipperScript():
                             file_path = os.path.join(dirpath, f)
                             dest = os.path.join(os.path.split(self.root)[1] + marker, \
                                 file_path[len(self.FIS_root) + 1:])
+
                             if(zip_file):
                                 self.files_zipped_count = self.files_zipped_count + 1
                                 zip_file.write(file_path, dest)
@@ -505,9 +509,8 @@ class ZipperScript():
                             break
             self.print_out("\tAdded %d file(s) to zip" % files_written)
             if files_written==0:
-                tkMessageBox.showinfo("WARNING", \
-                        "Could not find FIS files for route %s" % \
-                        (route_path))
+                tkMessageBox.showinfo("WARNING", 
+                        "Could not find FIS files for route %s" % (route_path))
 
     def get_routes_shot_closest_to_time(self, routeTime, ideal_time):
         """Returns a list of paths to the three routes shot closest to a
@@ -574,6 +577,8 @@ if __name__ == '__main__':
             help = "date directory to be searched")
     parser.add_option("--vehicle", action="store", dest="vehicle", default = False,
             help = "vehicle name")
+    parser.add_option("--FIS_root", action="store", dest="FIS_root", default = False,
+            help = "date directory to search for FIS files")
     (options, args) = parser.parse_args()
     
     if args:
@@ -581,4 +586,4 @@ if __name__ == '__main__':
     else:
         root = options.root
 
-    ZipperScript(root, options.vehicle, options.show_gui)
+    ZipperScript(root, options.vehicle, options.show_gui, options.FIS_root)
