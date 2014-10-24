@@ -223,6 +223,10 @@ class ZipperScript():
                 self.route_paths.remove(p)
                 self.zip_route(self.zip_file_val, p, \
                     [".gps", ".log", ".rdf", ".rsp"], marker)
+                #NEED ONLY FIRST ROUTE OF IMAGES
+                if(f[:-2] not in already_added_images):
+                    already_added_images.append(f[:-2])
+                    self.zip_route(self.zip_file_val, p, [".jpg"], marker)
                 for p in self.dmi_cal:
                     self.write_to_zip(self.zip_file_val, p, marker)
 
@@ -369,22 +373,21 @@ class ZipperScript():
                     image_frames_to_add = []
 
                     #GET FRAME NUMBERS FROM FEATURE FILE
-                    fea = open(os.path.join(p, f), "r")
-                    fea_lines = fea.readlines()
-                    for line in fea_lines[1:]:
-                        feature_tag_frames.append(int(line[0:5]))
+                    with open(os.path.join(p, f), "r") as fea:
+                        fea_lines = fea.readlines()
+                        for line in fea_lines[1:]:
+                            feature_tag_frames.append(int(line[0:5]))
 
-                    #ADD EVEN IMAGE NUMBERS WITHIN 6 TO image_frames_to_add
-                    for frame in feature_tag_frames:
-                        frame = frame // 2 * 2 #round down to closest even number
-                        for i in xrange(-10, 12, 2):
+                        #ADD EVEN IMAGE NUMBERS WITHIN 6 TO image_frames_to_add
+                        for frame in feature_tag_frames:
+                            frame = frame // 2 * 2 #round down to closest even number
+                            for i in xrange(-10, 12, 2):
 
-                            if frame + i not in image_frames_to_add:
-                                image_frames_to_add.append(frame + i)
-                    for i in xrange(len(image_frames_to_add)):
-                        image_frames_to_add[i] = str(image_frames_to_add[i]).zfill(5) + ".jpg"
-                    self.zip_route(zip_file, p, image_frames_to_add, marker)
-                    fea.close()
+                                if frame + i not in image_frames_to_add:
+                                    image_frames_to_add.append(frame + i)
+                        for i in xrange(len(image_frames_to_add)):
+                            image_frames_to_add[i] = str(image_frames_to_add[i]).zfill(5) + ".jpg"
+                        self.zip_route(zip_file, p, image_frames_to_add, marker)
 
     def zip_images(self, zip_file):
         """Adds sample images to the zip file.  Routes with burn or bounce in
@@ -404,7 +407,7 @@ class ZipperScript():
         time = {}
         lastFrame = {}
 
-        for p in self.route_paths:
+        for p in list(self.route_paths):
             for f in os.listdir(p):
                 if f[-4:]== ".log":
                     log_lines = open(os.path.join(p, f), "r").readlines()

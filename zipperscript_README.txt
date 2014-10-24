@@ -1,12 +1,22 @@
 Zipperscript
 
+Version: 4.0.54
+Date: 10-28-2014
+Author: Joe Green
+
+Changelog:
+
+4.0.54 First LRS run will include camera images.
+4.0.53 Added up to nine FIS files to collection zip.  Fixed bug where routes named burn/bounce were not being ignored
+4.0.0 Zipperscript rewritten from applescript version
+
+Purpose:
 This script has been written in python to replace the applescript zipperscript written by technology, so that it can be more easily edited.  The zipperscript zips up a sample of data collected to be uploaded to the FTP server and reviewed by the collection team.  It should be located in every collection vehicle on the desktop and should be used at the end of any day where data is collected.
 
 Using the Zipper Script:
 To start the zipperscript, double click on the zipperscript icon.  The script will prompt the user for a directory.  The user should pick that days collection Date directory and press “OK”.  The user will wait for a “success” dialog to appear.  This may take several minutes.
 
 Output files:
-
 The zipper script will make up to three zip files in the same directory as the root directory selected.  It will also make a log file that should be useful for troubleshooting purposes.  The logfile is named zipperscript_log_VEHICLE_DATETIME.txt and should be uploaded along with the zip files.
 
 1)  DATE_VEHICLE_Collection.zip
