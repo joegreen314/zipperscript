@@ -78,7 +78,7 @@ class testZipperscript:
     def build_route(self, route_name, frames, fullsize_files = False, include_files = None):
         #Implement fullsize files
         if include_files is None:
-            include_files = ["jpg", "fis", "txt", "rtf", "rut", "gps", "raw", "log",\
+            include_files = ["jpg", "fea", "fis", "txt", "rtf", "rut", "gps", "raw", "log",\
                     "rdf", "rsp", "hdl", "hdlg", "hdli", "hdls", "iri"]
         else:
             include_files = copy.copy(include_files)
@@ -177,10 +177,10 @@ class testZipperscript:
 
     def test_valid_files(self):
 
-        lrs_files = ["gps", "log", "rdf", "rsp"]
-        pave_files = ["gps", "rsp", "fis", "log", "rdf", "txt"] #also need first route's images
+        lrs_files = ["gps", "raw", "log", "rdf", "rsp"]
+        pave_files = ["gps", "raw", "rsp", "fis", "log", "rdf", "txt"] #also need first route's images
         distress_files = pave_files #also need first route's images
-        vcm_files = ["gps", "raw", "log", "rdf", "txt",\
+        vcm_files = ["raw", "gps", "raw", "log", "rdf", "txt",\
                 "hdl", "hdlg", "hdli", "hdls"] #need first route's images
         asset_files = vcm_files #also need first route's images
         images = ["jpg"]
@@ -228,6 +228,7 @@ class testZipperscript:
                 #print "Zipper_output of validation dir ", obj.contents[0]
                 #print "Should match this output", valid_date1
                 assert obj.contents[0] == valid_date1
+        #assert False
 
     def test_fea_tag_images(self):
         route_0 = self.build_route("route_0", 100, include_files=["jpg", "log"])
@@ -303,7 +304,7 @@ class D():
         return output
 
     def equals(self, other, depth):
-        #Is this method being called for files too?
+        #This method is not working properly.  It won't fail if extra files are included
         output = True
         error = ""
         d = "\n" + " " * 2 * depth

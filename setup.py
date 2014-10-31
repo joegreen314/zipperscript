@@ -13,9 +13,9 @@ OPTIONS = {'argv_emulation': True, 'excludes': ['PIL']}
 
 setup(
     app=APP,
-    name="Zipperscript_v54",
+    name="Zipperscript_v56",
     data_files=DATA_FILES,
     options={'py2app': OPTIONS},
     setup_requires=['py2app'],
-    version="4.0.54"
+    version="4.0.56"
 )
