@@ -47,14 +47,14 @@ class ZipperScript:
             self.enter_vehicle.grid(row=1, column=1)
             self.enter_vehicle.bind("<Return>", self.start_button_cmd)
 
-            self.browse_button = tk.Button(self.menu, text = "Browse...", command = lambda: self.browse_button_cmd(self.enter_root))
+            self.browse_button = tk.Button(self.menu, text = "Browse...", command=self.browse_button_cmd)
             self.browse_button.grid(row=0, column=2)
 
             self.start_button = tk.Button(self.menu, text = "Start Zipperscript", command=self.start_button_cmd)
             self.start_button.grid(row=1, column=2)
 
             self.log_display = tk.StringVar()
-            tk.Label(self.frame, textvariable = self.log_display, height=40, width=120, bg="black", fg="white", borderwidth=5, anchor = tk.SW, justify = tk.LEFT).grid(row=1, sticky=tk.E)
+            tk.Label(self.frame, textvariable = self.log_display, height=40, width=120, bg="black", fg="white", borderwidth=5, anchor = tk.SW, justify = tk.LEFT).grid(row=2, sticky=tk.E)
 
         self.print_out("***** ZIPPERSCRIPT LOG *****")
         self.print_out("Zipperscript Launcher opened at " + str(self.launcher_start))
@@ -68,14 +68,14 @@ class ZipperScript:
         else:
             self.run_zipperscript()
 
-    def browse_button_cmd(self, output):
+
+    def browse_button_cmd(self):
         out = askdirectory(title = "Choose date directory")
         if out:
-            output.delete(0, tk.END)
-            output.insert(0, str(out))
+            self.enter_root.delete(0, tk.END)
+            self.enter_root.insert(0, str(out))
 
     def start_button_cmd(self, event=None):
-        print self.enter_root.get(), os.path.isdir(self.enter_root.get())
         if not os.path.isdir(self.enter_root.get()):
             self.print_out("ERROR: Invalid directory: " + self.enter_root.get())
         if not self.enter_vehicle.get():
@@ -198,6 +198,7 @@ class ZipperScript:
         if self.show_gui:
             self.gui.destroy()
 
+
     def print_out(self, output):
         if hasattr(self, 'log'):
             self.log.write(str(self.get_time()) + " " + str(output) + "\n")
@@ -253,6 +254,8 @@ class ZipperScript:
         else:
             self.print_out("No DMI_Cal files found.")
 
+
+
     def zip_validations(self):
         """Checks list of route files for names with validation tag.  If any are
         found, creates validation zip and zips up the correct files and removes
@@ -300,9 +303,6 @@ class ZipperScript:
                 self.route_paths.remove(p)
                 self.zip_route(self.zip_file_val, p, 
                             [".gps", ".fea", ".raw", ".rsp", ".fis", ".log", ".rdf", ".txt"], marker)
-                
-                self.zip_route(self.zip_file_val, p, 
-                            [".gps", ".fea", ".raw", ".rsp", ".log", ".rdf", ".txt"], marker)
                 #NEED ONLY FIRST ROUTE OF IMAGES
                 if(f[:-2] not in already_added_images):
                     already_added_images.append(f[:-2])
@@ -332,6 +332,7 @@ class ZipperScript:
 
         for p in pospac_to_add:
             self.write_to_zip(self.zip_file_val, p, marker)
+
 
     def create_validation_zip(self):
         """Called from zip_validations if any routes with validation tags are
@@ -369,7 +370,6 @@ class ZipperScript:
         self.zip_images(zip_file) #zip sample images and FIS
 
     def zip_route(self, zip_file, route_path, file_types, marker):
-        #need zip_file, route_path, file_types, dest
         """Searches for and zips all files in route directory with path ending
         in 'file_types'.
 
@@ -398,7 +398,6 @@ class ZipperScript:
             self.print_out("\tAdded %d file(s) to zip." % files_written)
 
     def write_to_zip(self, zip_file, file_path, marker):
-        #only need zip_file, file_path and destination
         """Adds a single file to zip_file
 
         Parameters
